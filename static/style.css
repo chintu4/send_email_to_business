@@ -1,0 +1,70 @@
+*{
+    margin:auto  
+}
+body{
+    background-color: black;
+    color:white;
+
+}
+
+h1{
+    color:red
+}
+h1:hover{
+    color:white
+}
+h1::before{
+    animation:linear 2s infinite;
+}
+
+@keyframes linear {
+    0%{
+        font-size:5dp;
+    }
+    
+}
+/* Button styling */
+button {
+    background-color: #007BFF;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+    border-color: brown;
+}
+/* Example font styling */
+body {
+    font-family: 'Arial', sans-serif;
+}
+div{
+    padding:5px 5px 5px 5px;
+}
+h1 {
+    text-align: center; /* Center horizontally */
+    line-height: 2; /* Adjust the line height to center vertically */
+  }
+h2 {
+    text-align: center; /* Center horizontally */
+    line-height: 2; /* Adjust the line height to center vertically */
+  }
+input {
+    text-align: center; /* Center horizontally */
+    line-height: 2; /* Adjust the line height to center vertically */
+  }
+p{
+    text-align: center; /* Center horizontally */
+    line-height: 2; /* Adjust the line height to center vertically */
+  }
+textarea{
+    text-align: center; /* Center horizontally */
+    line-height: 2; /* Adjust the line height to center vertically */
+  }
+label{
+    text-align: center; /* Center horizontally */
+    line-height: 2; /* Adjust the line height to center vertically */
+  }

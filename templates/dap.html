@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1 class="center-block">Email sender</h1>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flash-message">
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% endwith %}
+    <label>Google search: </label>
+    <div>Email found for business</div>
+    <input id="searchInput" />
+    <button id="send_query">send query</button>
+    <ul id="emailList">
+        <!-- Email buttons will be added here -->
+       
+    </ul>
+    
+
+    <div>Your selected email id: <p id="selectedEmail">Selected Email: </p></div>
+    <label>Type your prompt :</label>
+    <textarea id="promptInput"></textarea></br>
+    <button type="button" id="promptButton" class="btn btn-notify">send </button>
+   
+
+    <h2>Generate and Send Email</h2>
+ <!--   <form method="POST" role="form" action="/send_email">-->
+        <div class="form-group row">
+            <div class="center-block" style="width:200px;background-color:#ccc;">
+              <label>subject :</label><input name='subject' id="subject"/></br></br>
+
+              <textarea name="generated_email" id="generatedEmail" class="pull-right"></textarea>
+              <button id="sendMailButton">Send Email</button>
+
+            </div>
+        </div>
+   <!--</form>-->
+
+    <div id="response"></div>
+
+    <script>
+
+        document.getElementById("send_query").addEventListener("click", function () {
+            var query = document.getElementById('searchInput').value;
+            //console.log(query+'this is a query');
+
+            // Send a request to the server to fetch email IDs
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/fetch_emails", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            
+            xhr.onload = function () {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                var response = JSON.parse(xhr.responseText);
+                var emailList = response.email_list;
+            
+                if (Array.isArray(emailList)) {
+                  var emailListHtml = "";
+                  
+                  emailList.forEach(function (emailArray) {
+                    emailArray.forEach(function (emailValue) {
+                      emailListHtml += '<li><button class="emailButton" data-email="' + emailValue + '">' + emailValue + '</button></li>';
+                    });
+                  });
+            
+                  // Render the email list in the "emailList" element
+                  document.getElementById("emailList").innerHTML = emailListHtml;
+            
+                  // Add event listeners to each button
+                  const buttons = document.querySelectorAll('.emailButton');
+                  buttons.forEach(button => {
+                    button.addEventListener('click', function () {
+                      const emailValue = this.getAttribute('data-email');
+                      // Handle the click event and display the selected email
+                      console.log(`Button with email ${emailValue} was clicked.`);
+                      var selectedEmailElement = document.getElementById("selectedEmail");
+                      selectedEmailElement.innerHTML = `Selected Email: ${emailValue}`;
+                    });
+                  });
+                } else {
+                  // Handle the case where emailList is not an array
+                  console.error("Email list is not in the expected format.");
+                }
+              }
+            };
+            
+            var data = JSON.stringify({ query: query });
+            xhr.send(data);
+        });
+        
+  
+
+// sending the prompt,
+document.getElementById("promptButton").addEventListener("click", function (event) {
+            event.preventDefault();
+            var prompt = document.getElementById("promptInput").value;
+            var selectedEmail = document.getElementById("selectedEmail").textContent;
+
+            // Send a request to the server to generate the email
+           
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/generate_email", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    var response = JSON.parse(xhr.responseText);
+                    console.log(response);
+                    
+                    document.getElementById("generatedEmail").value = response['generated_email'];
+                }
+            };
+
+            var data = JSON.stringify({ prompt: prompt,selectedEmail:selectedEmail });
+            xhr.send(data);
+            
+        })
+
+ 
+        
+        document.getElementById("sendMailButton").addEventListener("click", function (event) {
+          event.preventDefault();
+          console.log("Button clicked"); // Check if the button click event is triggered
+        
+          var subject = document.getElementById("subject").value;
+          
+          var selected_email = document.getElementById("selectedEmail").textContent;
+        
+          console.log("Subject:", subject);
+          console.log("Generated Email:", generate_email);
+          console.log("Selected Email:", selected_email);
+        
+          // Send a request to the server to generate the email
+          var xhr = new XMLHttpRequest();
+          xhr.open("POST", "/send_email", true);
+          xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        
+          //xhr.onload = function () {
+          //  if (xhr.status >= 200 && xhr.status < 300) {
+          //    try {
+          //      var response = JSON.parse(xhr.responseText);
+          //      console.log(response);
+          //      document.getElementById("generatedEmail").textContent = response['generated_email'];
+          //    } catch (error) {
+          //      console.error("Error parsing JSON response:", error);
+          //      // Handle the error appropriately, e.g., display a message to the user
+          //    }
+          //  }
+          //};
+          var generate_email = document.getElementById("generatedEmail").value;
+          var data = JSON.stringify({ subject: subject, generate_email: generate_email, selected_email: selected_email });
+          console.log(data);
+          xhr.send(data);
+        });
+
+
+
+//
+const eventSource = new EventSource("/subscribe");
+
+        eventSource.onmessage = function (event) {
+            // This function is called when a new message is received from the server
+            const message = event.data;
+            // You can add JavaScript to display the message on the page as you desire
+            const messageElement = document.createElement("p");
+            messageElement.textContent = message;
+            document.body.appendChild(messageElement);
+        };
+    </script>
+</body>
+</html>

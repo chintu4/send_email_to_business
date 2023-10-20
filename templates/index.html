@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1 class="center-block">&#9993; Email sender &#9993;</h1>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flash-message">
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <h2>Google search: </h2>
+    <div>Email found for business</div>
+    <input id="searchInput" />
+    <button id="send_query">Send Query</button>
+
+    <ul id="emailList">
+        <!-- Email buttons will be added here -->
+    </ul>
+
+    <div>Your selected email id: <p id="selectedEmail">Selected Email: </p></div>
+
+    <label>Type your prompt:</label><br/>
+    <textarea id="promptInput"></textarea>
+    <button type="button" id="promptButton" class="btn btn-notify" onclick="autoResize(document.getElementById('generatedEmail'))">Send</button>
+
+    <h2>Generate and Send Email</h2>
+
+    <div class="form-group row">
+        <div class="center-block" style="width:200px;background-color:#ccc;">
+            <label>Subject:</label>
+            <input name='subject' id="subject" /><br><br>
+            <textarea name="generated_email" id="generatedEmail" oninput="autoResize(this)" class="pull-right"></textarea>
+            <button id="sendMailButton" onclick="autoResize(document.getElementById('generatedEmail'))">Send Email</button>
+        </div>
+    </div>
+
+    <div id="response"></div>
+
+    <script>
+        document.getElementById("send_query").addEventListener("click", function () {
+            var query = document.getElementById('searchInput').value;
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/fetch_emails", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    var response = JSON.parse(xhr.responseText);
+                    var emailList = response.email_list;
+
+                    if (Array.isArray(emailList)) {
+                        var emailListHtml = "";
+
+                        emailList.forEach(function (emailArray) {
+                            emailArray.forEach(function (emailValue) {
+                                emailListHtml += '<li><button class="emailButton" data-email="' + emailValue + '">' + emailValue + '</button></li>';
+                            });
+                        });
+
+                        document.getElementById("emailList").innerHTML = emailListHtml;
+
+                        const buttons = document.querySelectorAll('.emailButton');
+                        buttons.forEach(button => {
+                            button.addEventListener('click', function () {
+                                const emailValue = this.getAttribute('data-email');
+                                console.log(`Button with email ${emailValue} was clicked.`);
+                                var selectedEmailElement = document.getElementById("selectedEmail");
+                                selectedEmailElement.innerHTML = `Selected Email: ${emailValue}`;
+                            });
+                        });
+                    } else {
+                        console.error("Email list is not in the expected format.");
+                    }
+                }
+            };
+
+            var data = JSON.stringify({ query: query });
+            xhr.send(data);
+        });
+
+        document.getElementById("promptButton").addEventListener("click", function (event) {
+            event.preventDefault();
+            var prompt = document.getElementById("promptInput").value;
+            var selectedEmail = document.getElementById("selectedEmail").textContent;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/generate_email", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    var response = JSON.parse(xhr.responseText);
+                    document.getElementById("generatedEmail").value = response['generated_email'];
+                }
+            };
+
+            var data = JSON.stringify({ prompt: prompt, selectedEmail: selectedEmail });
+            xhr.send(data);
+        });
+
+        document.getElementById("sendMailButton").addEventListener("click", function (event) {
+            event.preventDefault();
+            var subject = document.getElementById("subject").value;
+            var generate_email = document.getElementById("generatedEmail").value;
+            var selected_email = document.getElementById("selectedEmail").textContent;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/send_email", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+            var data = JSON.stringify({ subject: subject, generate_email: generate_email, selected_email: selected_email });
+            xhr.send(data);
+        });
+
+        
+
+        const eventSource = new EventSource("/subscribe");
+
+        eventSource.onmessage = function (event) {
+            const message = event.data;
+            const messageElement = document.createElement("p");
+            messageElement.textContent = message;
+            document.body.appendChild(messageElement);
+        };
+        function autoResize(textarea) {
+            textarea.style.height = 'auto'; // Reset the height to auto to prevent overflow
+            textarea.style.height = (textarea.scrollHeight) + 'px'; // Set the height to match the content
+          }
+    </script>
+</body>
+</html>
